@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f8fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Scoop Counter">
+<link rel="manifest" href="manifest.json">
+<title>Formula Scoop Counter</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0; min-height: 100vh; min-height: 100dvh;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  background: #f7f8fb; color: #17181c;
+  display: flex; justify-content: center;
+  overscroll-behavior: none;
+}
+.app {
+  width: 100%; max-width: 520px; min-height: 100dvh;
+  padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; align-items: center;
+}
+.header { text-align: center; margin-top: 8px; }
+.bottle { font-size: 58px; line-height: 1; }
+h1 { margin: 12px 0 4px; font-size: 28px; letter-spacing: -0.6px; }
+.subtitle { color: #70737b; font-size: 16px; }
+.counter {
+  flex: 1; width: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; min-height: 260px;
+}
+.number {
+  font-size: clamp(100px, 28vw, 150px); line-height: .95;
+  font-weight: 800; letter-spacing: -5px;
+  font-variant-numeric: tabular-nums;
+}
+.label { margin-top: 8px; font-size: 25px; color: #70737b; font-weight: 600; }
+.controls { display: flex; gap: 22px; margin-bottom: 28px; }
+button {
+  border: 0; font: inherit; cursor: pointer; touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+}
+.counterBtn {
+  width: 130px; height: 130px; border-radius: 34px;
+  background: #1f70e8; color: white;
+  font-size: 62px; font-weight: 400;
+  box-shadow: 0 7px 18px rgba(31,112,232,.20);
+}
+.counterBtn:active { transform: scale(.96); }
+.counterBtn:disabled { opacity: .32; box-shadow: none; }
+.secondary {
+  width: 100%; height: 58px; border-radius: 17px;
+  background: white; color: #202126;
+  border: 1px solid #dedfe4; font-size: 18px; font-weight: 700;
+}
+.finish {
+  margin-top: 12px; background: #1f70e8; color: white; border: 0;
+}
+.secondary:active { transform: scale(.985); }
+.note { margin-top: 15px; font-size: 13px; color: #8a8d95; text-align: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .number { transition: transform .12s ease; }
+  .bump { transform: scale(1.05); }
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="header">
+    <div class="bottle">🍼</div>
+    <h1>Formula Scoop Counter</h1>
+    <div class="subtitle">Tap + for each scoop</div>
+  </header>
+
+  <section class="counter" aria-live="polite">
+    <div id="number" class="number">0</div>
+    <div id="label" class="label">scoops</div>
+  </section>
+
+  <div class="controls">
+    <button id="minus" class="counterBtn" aria-label="Remove one scoop">−</button>
+    <button id="plus" class="counterBtn" aria-label="Add one scoop">+</button>
+  </div>
+
+  <button id="reset" class="secondary">↻ &nbsp; Reset</button>
+  <button id="finish" class="secondary finish">✓ &nbsp; Bottle Finished</button>
+  <div class="note">Your count is saved automatically on this device.</div>
+</main>
+
+<script>
+const KEY = "formulaScoopCount";
+let count = Number(localStorage.getItem(KEY) || 0);
+if (!Number.isFinite(count) || count < 0) count = 0;
+
+const numberEl = document.getElementById("number");
+const labelEl = document.getElementById("label");
+const minus = document.getElementById("minus");
+
+function save() {
+  localStorage.setItem(KEY, String(count));
+}
+function render(animate = true) {
+  numberEl.textContent = count;
+  labelEl.textContent = count === 1 ? "scoop" : "scoops";
+  minus.disabled = count === 0;
+  if (animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    numberEl.classList.remove("bump");
+    void numberEl.offsetWidth;
+    numberEl.classList.add("bump");
+  }
+}
+document.getElementById("plus").addEventListener("click", () => {
+  count++;
+  save(); render();
+});
+minus.addEventListener("click", () => {
+  if (count > 0) { count--; save(); render(); }
+});
+document.getElementById("reset").addEventListener("click", () => {
+  if (count === 0 || confirm("Reset the scoop count to zero?")) {
+    count = 0; save(); render(false);
+  }
+});
+document.getElementById("finish").addEventListener("click", () => {
+  count = 0; save(); render(false);
+});
+render(false);
+
+// Register offline support when hosted from a normal web origin.
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
